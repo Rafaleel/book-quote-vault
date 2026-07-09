@@ -1,7 +1,7 @@
 import React from 'react';
-import { Quote, Tag } from 'lucide-react';
+import { Quote, Tag, Edit3, Trash2 } from 'lucide-react';
 
-export default function QuoteCard({ quote }) {
+export default function QuoteCard({ quote, onEdit, onDelete }) {
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative group">
       <div className="absolute top-6 left-6 opacity-10">
@@ -30,8 +30,21 @@ export default function QuoteCard({ quote }) {
         )}
       </div>
 
-      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-        <button className="text-gray-400 hover:text-indigo-600 text-sm font-medium">Edit</button>
+      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 bg-white/95 backdrop-blur-sm p-1 rounded-lg border border-gray-100 shadow-sm">
+        <button 
+          onClick={() => onEdit(quote)}
+          className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-md hover:bg-indigo-50 transition-colors"
+          title="Edit Quote"
+        >
+          <Edit3 size={15} />
+        </button>
+        <button 
+          onClick={() => onDelete(quote.id)}
+          className="p-1.5 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors"
+          title="Delete Quote"
+        >
+          <Trash2 size={15} />
+        </button>
       </div>
     </div>
   );

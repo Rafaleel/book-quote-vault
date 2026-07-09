@@ -13,8 +13,15 @@ export default function BookDetails() {
   const [quotes, setQuotes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
+  // States for Add/Edit Modals
   const [isAddQuoteOpen, setIsAddQuoteOpen] = useState(false);
   const [newQuote, setNewQuote] = useState({ text: '', page: '', tags: '' });
+
+  const [isEditBookOpen, setIsEditBookOpen] = useState(false);
+  const [editBookData, setEditBookData] = useState({ title: '', author: '', coverUrl: '' });
+
+  const [isEditQuoteOpen, setIsEditQuoteOpen] = useState(false);
+  const [editQuoteData, setEditQuoteData] = useState({ id: null, text: '', page: '', tags: '' });
 
   useEffect(() => {
     fetchBookData();
@@ -48,6 +55,27 @@ export default function BookDetails() {
     }
   };
 
+  const handleEditBookClick = () => {
+    setEditBookData({
+      title: book.title,
+      author: book.author,
+      coverUrl: book.coverUrl || ''
+    });
+    setIsEditBookOpen(true);
+  };
+
+  const handleEditBookSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await api.put(`/books/${id}`, editBookData);
+      setBook(response.data);
+      setIsEditBookOpen(false);
+    } catch (error) {
+      console.error("Error editing book:", error);
+      alert("Failed to edit book.");
+    }
+  };
+
   const handleAddQuote = async (e) => {
     e.preventDefault();
     try {
@@ -63,6 +91,45 @@ export default function BookDetails() {
     } catch (error) {
       console.error("Error adding quote:", error);
       alert("Failed to add quote.");
+    }
+  };
+
+  const handleDeleteQuote = async (quoteId) => {
+    if(window.confirm("Are you sure you want to delete this quote?")) {
+      try {
+        await api.delete(`/books/${id}/quotes/${quoteId}`);
+        setQuotes(quotes.filter(q => q.id !== quoteId));
+      } catch (error) {
+        console.error("Error deleting quote:", error);
+        alert("Failed to delete quote.");
+      }
+    }
+  };
+
+  const handleEditQuoteClick = (quote) => {
+    setEditQuoteData({
+      id: quote.id,
+      text: quote.text,
+      page: quote.page || '',
+      tags: quote.tags ? quote.tags.join(', ') : ''
+    });
+    setIsEditQuoteOpen(true);
+  };
+
+  const handleEditQuoteSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const tagsArray = editQuoteData.tags.split(',').map(t => t.trim()).filter(t => t);
+      const response = await api.put(`/books/${id}/quotes/${editQuoteData.id}`, {
+        text: editQuoteData.text,
+        page: editQuoteData.page ? parseInt(editQuoteData.page) : null,
+        tags: tagsArray
+      });
+      setQuotes(quotes.map(q => q.id === editQuoteData.id ? response.data : q));
+      setIsEditQuoteOpen(false);
+    } catch (error) {
+      console.error("Error editing quote:", error);
+      alert("Failed to edit quote.");
     }
   };
 
@@ -109,7 +176,7 @@ export default function BookDetails() {
             </div>
             
             <div className="flex gap-2">
-              <button className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Edit Book">
+              <button onClick={handleEditBookClick} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Edit Book">
                 <Edit3 size={20} />
               </button>
               <button onClick={handleDeleteBook} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete Book">
@@ -134,7 +201,12 @@ export default function BookDetails() {
         {quotes.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {quotes.map(quote => (
-              <QuoteCard key={quote.id} quote={quote} />
+              <QuoteCard 
+                key={quote.id} 
+                quote={quote} 
+                onEdit={handleEditQuoteClick}
+                onDelete={handleDeleteQuote}
+              />
             ))}
           </div>
         ) : (
@@ -204,6 +276,118 @@ export default function BookDetails() {
               className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
             >
               Save Quote
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Book Modal */}
+      <Modal 
+        isOpen={isEditBookOpen} 
+        onClose={() => setIsEditBookOpen(false)} 
+        title="Edit Book Details"
+      >
+        <form onSubmit={handleEditBookSubmit} className="flex flex-col gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <input 
+              required
+              type="text" 
+              value={editBookData.title}
+              onChange={e => setEditBookData({...editBookData, title: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Author</label>
+            <input 
+              required
+              type="text" 
+              value={editBookData.author}
+              onChange={e => setEditBookData({...editBookData, author: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Cover Image URL</label>
+            <input 
+              type="url" 
+              value={editBookData.coverUrl}
+              onChange={e => setEditBookData({...editBookData, coverUrl: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+            />
+          </div>
+          
+          <div className="mt-4 flex justify-end gap-3">
+            <button 
+              type="button" 
+              onClick={() => setIsEditBookOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
+            >
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Quote Modal */}
+      <Modal 
+        isOpen={isEditQuoteOpen} 
+        onClose={() => setIsEditQuoteOpen(false)} 
+        title="Edit Quote"
+      >
+        <form onSubmit={handleEditQuoteSubmit} className="flex flex-col gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Quote Text</label>
+            <textarea 
+              required
+              rows={4}
+              value={editQuoteData.text}
+              onChange={e => setEditQuoteData({...editQuoteData, text: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
+            />
+          </div>
+          <div className="flex gap-4">
+            <div className="w-1/3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Page</label>
+              <input 
+                type="number" 
+                value={editQuoteData.page}
+                onChange={e => setEditQuoteData({...editQuoteData, page: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              />
+            </div>
+            <div className="w-2/3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+              <input 
+                type="text" 
+                value={editQuoteData.tags}
+                onChange={e => setEditQuoteData({...editQuoteData, tags: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                placeholder="Comma separated (e.g. Habits, Focus)"
+              />
+            </div>
+          </div>
+          
+          <div className="mt-4 flex justify-end gap-3">
+            <button 
+              type="button" 
+              onClick={() => setIsEditQuoteOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
+            >
+              Save Changes
             </button>
           </div>
         </form>

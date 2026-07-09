@@ -46,4 +46,16 @@ public class QuoteController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PutMapping("/{quoteId}")
+    public ResponseEntity<Quote> updateQuote(@PathVariable Long bookId, @PathVariable Long quoteId, @RequestBody Quote quoteDetails) {
+        return quoteRepository.findById(quoteId)
+                .map(quote -> {
+                    quote.setText(quoteDetails.getText());
+                    quote.setPage(quoteDetails.getPage());
+                    quote.setTags(quoteDetails.getTags());
+                    return ResponseEntity.ok(quoteRepository.save(quote));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 }
