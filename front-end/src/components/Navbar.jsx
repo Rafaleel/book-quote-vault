@@ -1,8 +1,11 @@
 import React from 'react';
-import { BookOpen, UserCircle } from 'lucide-react';
+import { BookOpen, UserCircle, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Navbar() {
+  const { user, logout } = useAuth();
+
   return (
     <nav className="bg-white/70 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -17,10 +20,22 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
-              <UserCircle className="w-6 h-6" />
-              <span className="text-sm font-medium hidden sm:block">My Library</span>
-            </button>
+            {user && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 text-gray-600">
+                  <UserCircle className="w-5 h-5" />
+                  <span className="text-sm font-medium hidden sm:block">{user.email}</span>
+                </div>
+                <button 
+                  onClick={logout}
+                  className="flex items-center gap-1.5 text-gray-400 hover:text-red-600 transition-colors p-1.5 rounded-lg hover:bg-red-50 cursor-pointer"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="text-xs font-semibold uppercase tracking-wider hidden sm:block">Exit</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
