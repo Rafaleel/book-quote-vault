@@ -56,6 +56,17 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+        
+        var optionalUser = userRepository.findByEmail(request.getEmail());
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            if (user.getAuthProvider() == User.AuthProvider.GOOGLE) {
+                return ResponseEntity.badRequest().body(
+                    java.util.Map.of("message", "This account is linked to Google. Please sign in using the Google button below.")
+                );
+            }
+        }
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
