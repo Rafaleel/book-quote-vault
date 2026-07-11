@@ -11,9 +11,9 @@ export default function OAuth2RedirectHandler() {
     const token = searchParams.get('token');
     if (token) {
       loginWithToken(token);
-      navigate('/');
+      navigate('/', { replace: true });
     } else {
-      navigate('/login');
+      navigate('/login', { replace: true });
     }
   }, [searchParams]);
 

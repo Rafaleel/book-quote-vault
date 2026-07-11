@@ -18,7 +18,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    const interceptor = api.interceptors.request.use((config) => {
+    const requestInterceptor = api.interceptors.request.use((config) => {
       const token = localStorage.getItem('token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -28,8 +28,23 @@ export function AuthProvider({ children }) {
       return Promise.reject(error);
     });
 
+    const responseInterceptor = api.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response && error.response.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userEmail');
+          delete api.defaults.headers.common['Authorization'];
+          setUser(null);
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
+      }
+    );
+
     return () => {
-      api.interceptors.request.eject(interceptor);
+      api.interceptors.request.eject(requestInterceptor);
+      api.interceptors.response.eject(responseInterceptor);
     };
   }, []);
 
@@ -47,8 +62,8 @@ export function AuthProvider({ children }) {
     try {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
       }).join(''));
       const payload = JSON.parse(jsonPayload);
       const userEmail = payload.sub; // subject is the email
