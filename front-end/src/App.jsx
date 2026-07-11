@@ -5,6 +5,7 @@ import Gallery from './pages/Gallery';
 import BookDetails from './pages/BookDetails';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 
@@ -15,6 +16,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
 
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Layout />}>

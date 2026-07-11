@@ -25,15 +25,23 @@ public class User implements UserDetails {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String password;
 
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @Enumerated(EnumType.STRING)
+    private AuthProvider authProvider = AuthProvider.LOCAL;
+
     public enum Role {
         USER,
         ADMIN
+    }
+
+    public enum AuthProvider {
+        LOCAL,
+        GOOGLE
     }
 
     @Override

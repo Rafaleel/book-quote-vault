@@ -43,6 +43,24 @@ export function AuthProvider({ children }) {
     return response.data;
   };
 
+  const loginWithToken = (token) => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      const payload = JSON.parse(jsonPayload);
+      const userEmail = payload.sub; // subject is the email
+      localStorage.setItem('token', token);
+      localStorage.setItem('userEmail', userEmail);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setUser({ email: userEmail });
+    } catch (e) {
+      console.error("Invalid token received from OAuth2", e);
+    }
+  };
+
   const register = async (email, password) => {
     const response = await api.post('/auth/register', { email, password });
     const { token, email: userEmail } = response.data;
@@ -61,7 +79,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithToken, register, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );
