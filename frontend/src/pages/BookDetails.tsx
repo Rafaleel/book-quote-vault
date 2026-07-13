@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Edit3 } from 'lucide-react';
 import QuoteCard from '../components/QuoteCard';
 import Modal from '../components/ui/Modal';
 import api from '../services/api';
+import { Book, Quote } from '../types';
 
 export default function BookDetails() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  const [book, setBook] = useState(null);
-  const [quotes, setQuotes] = useState([]);
+  const [book, setBook] = useState<Book | null>(null);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // States for Add/Edit Modals
   const [isAddQuoteOpen, setIsAddQuoteOpen] = useState(false);
   const [newQuote, setNewQuote] = useState({ text: '', page: '', tags: '' });
 
@@ -21,7 +21,7 @@ export default function BookDetails() {
   const [editBookData, setEditBookData] = useState({ title: '', author: '', coverUrl: '' });
 
   const [isEditQuoteOpen, setIsEditQuoteOpen] = useState(false);
-  const [editQuoteData, setEditQuoteData] = useState({ id: null, text: '', page: '', tags: '' });
+  const [editQuoteData, setEditQuoteData] = useState<{id: number | null, text: string, page: string, tags: string}>({ id: null, text: '', page: '', tags: '' });
 
   useEffect(() => {
     fetchBookData();
@@ -56,6 +56,7 @@ export default function BookDetails() {
   };
 
   const handleEditBookClick = () => {
+    if (!book) return;
     setEditBookData({
       title: book.title,
       author: book.author,
@@ -64,7 +65,7 @@ export default function BookDetails() {
     setIsEditBookOpen(true);
   };
 
-  const handleEditBookSubmit = async (e) => {
+  const handleEditBookSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       const response = await api.put(`/books/${id}`, editBookData);
@@ -76,7 +77,7 @@ export default function BookDetails() {
     }
   };
 
-  const handleAddQuote = async (e) => {
+  const handleAddQuote = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       const tagsArray = newQuote.tags.split(',').map(t => t.trim()).filter(t => t);
@@ -94,7 +95,7 @@ export default function BookDetails() {
     }
   };
 
-  const handleDeleteQuote = async (quoteId) => {
+  const handleDeleteQuote = async (quoteId: number) => {
     if(window.confirm("Are you sure you want to delete this quote?")) {
       try {
         await api.delete(`/books/${id}/quotes/${quoteId}`);
@@ -106,17 +107,17 @@ export default function BookDetails() {
     }
   };
 
-  const handleEditQuoteClick = (quote) => {
+  const handleEditQuoteClick = (quote: Quote) => {
     setEditQuoteData({
-      id: quote.id,
+      id: quote.id || null,
       text: quote.text,
-      page: quote.page || '',
+      page: quote.page ? String(quote.page) : '',
       tags: quote.tags ? quote.tags.join(', ') : ''
     });
     setIsEditQuoteOpen(true);
   };
 
-  const handleEditQuoteSubmit = async (e) => {
+  const handleEditQuoteSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       const tagsArray = editQuoteData.tags.split(',').map(t => t.trim()).filter(t => t);
@@ -153,7 +154,6 @@ export default function BookDetails() {
         Back to Library
       </Link>
 
-      {/* Book Header */}
       <div className="flex flex-col md:flex-row gap-8 items-start mb-12">
         <div className={`w-full md:w-64 h-80 md:h-96 shrink-0 rounded-2xl overflow-hidden shadow-lg border border-gray-100 ${book.color || 'bg-gray-100'}`}>
           {book.coverUrl ? (
@@ -195,7 +195,6 @@ export default function BookDetails() {
         </div>
       </div>
 
-      {/* Quotes Grid */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Saved Quotes</h2>
         {quotes.length > 0 ? (
@@ -222,7 +221,6 @@ export default function BookDetails() {
         )}
       </div>
 
-      {/* Add Quote Modal */}
       <Modal 
         isOpen={isAddQuoteOpen} 
         onClose={() => setIsAddQuoteOpen(false)} 
@@ -281,7 +279,6 @@ export default function BookDetails() {
         </form>
       </Modal>
 
-      {/* Edit Book Modal */}
       <Modal 
         isOpen={isEditBookOpen} 
         onClose={() => setIsEditBookOpen(false)} 
@@ -336,7 +333,6 @@ export default function BookDetails() {
         </form>
       </Modal>
 
-      {/* Edit Quote Modal */}
       <Modal 
         isOpen={isEditQuoteOpen} 
         onClose={() => setIsEditQuoteOpen(false)} 

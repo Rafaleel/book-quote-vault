@@ -1,7 +1,11 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
+import { Book } from '../types';
 
-export default function BookCard({ book }) {
+interface BookCardProps {
+  book: Book & { color?: string };
+}
+
+export default function BookCard({ book }: BookCardProps) {
   return (
     <Link to={`/book/${book.id}`} className="group relative block overflow-hidden rounded-2xl bg-white shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-80 flex flex-col cursor-pointer">
       <div className={`relative h-48 w-full ${book.color} overflow-hidden`}>

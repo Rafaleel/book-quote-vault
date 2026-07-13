@@ -1,11 +1,17 @@
-import React from 'react';
-import { Quote, Tag, Edit3, Trash2 } from 'lucide-react';
+import { Quote as QuoteIcon, Tag, Edit3, Trash2 } from 'lucide-react';
+import { Quote } from '../types';
 
-export default function QuoteCard({ quote, onEdit, onDelete }) {
+interface QuoteCardProps {
+  quote: Quote & { tags?: string[] };
+  onEdit: (quote: Quote) => void;
+  onDelete: (id: number) => void;
+}
+
+export default function QuoteCard({ quote, onEdit, onDelete }: QuoteCardProps) {
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative group">
       <div className="absolute top-6 left-6 opacity-10">
-        <Quote size={48} className="text-indigo-600" />
+        <QuoteIcon size={48} className="text-indigo-600" />
       </div>
 
       <div className="relative z-10 pl-4 border-l-2 border-indigo-200 ml-4 mt-2">
@@ -17,7 +23,7 @@ export default function QuoteCard({ quote, onEdit, onDelete }) {
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-50">
         <div className="flex items-center gap-2 flex-wrap">
           <Tag size={14} className="text-gray-400" />
-          {quote.tags.map((tag, idx) => (
+          {quote.tags?.map((tag, idx) => (
             <span key={idx} className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-md font-medium">
               {tag}
             </span>
@@ -39,7 +45,7 @@ export default function QuoteCard({ quote, onEdit, onDelete }) {
           <Edit3 size={15} />
         </button>
         <button 
-          onClick={() => onDelete(quote.id)}
+          onClick={() => quote.id && onDelete(quote.id)}
           className="p-1.5 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors"
           title="Delete Quote"
         >

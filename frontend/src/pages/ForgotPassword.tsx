@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 
@@ -8,7 +8,7 @@ export default function ForgotPassword() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
@@ -17,7 +17,7 @@ export default function ForgotPassword() {
     try {
       const response = await api.post('/auth/forgot-password', { email });
       setMessage(response.data.message || 'If the email is registered, you will receive a recovery link shortly.');
-    } catch (err) {
+    } catch (err: any) {
       setError(err.response?.data?.message || 'An error occurred while trying to send the email.');
     } finally {
       setLoading(false);

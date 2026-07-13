@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 
@@ -13,7 +13,7 @@ export default function ResetPassword() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
@@ -40,7 +40,7 @@ export default function ResetPassword() {
       setTimeout(() => {
         navigate('/login');
       }, 3000);
-    } catch (err) {
+    } catch (err: any) {
       setError(err.response?.data?.message || 'An error occurred while resetting your password. The link might have expired.');
     } finally {
       setLoading(false);
