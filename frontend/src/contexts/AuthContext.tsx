@@ -1,11 +1,26 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import api from '../services/api';
+import { AuthResponse } from '../types';
 
-const AuthContext = createContext({});
+export interface UserContextData {
+  email: string;
+}
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+export interface AuthContextType {
+  user: UserContextData | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<AuthResponse>;
+  loginWithToken: (token: string) => void;
+  register: (email: string, password: string) => Promise<AuthResponse>;
+  logout: () => void;
+  isAuthenticated: boolean;
+}
+
+const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<UserContextData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -20,7 +35,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const requestInterceptor = api.interceptors.request.use((config) => {
       const token = localStorage.getItem('token');
-      if (token) {
+      if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
       return config;
@@ -48,8 +63,8 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  const login = async (email, password) => {
-    const response = await api.post('/auth/login', { email, password });
+  const login = async (email: string, password: string): Promise<AuthResponse> => {
+    const response = await api.post<AuthResponse>('/auth/login', { email, password });
     const { token, email: userEmail } = response.data;
     localStorage.setItem('token', token);
     localStorage.setItem('userEmail', userEmail);
@@ -58,7 +73,7 @@ export function AuthProvider({ children }) {
     return response.data;
   };
 
-  const loginWithToken = (token) => {
+  const loginWithToken = (token: string) => {
     try {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -66,7 +81,7 @@ export function AuthProvider({ children }) {
         return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
       }).join(''));
       const payload = JSON.parse(jsonPayload);
-      const userEmail = payload.sub; // subject is the email
+      const userEmail = payload.sub;
       localStorage.setItem('token', token);
       localStorage.setItem('userEmail', userEmail);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -76,8 +91,8 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const register = async (email, password) => {
-    const response = await api.post('/auth/register', { email, password });
+  const register = async (email: string, password: string): Promise<AuthResponse> => {
+    const response = await api.post<AuthResponse>('/auth/register', { email, password });
     const { token, email: userEmail } = response.data;
     localStorage.setItem('token', token);
     localStorage.setItem('userEmail', userEmail);
@@ -100,4 +115,4 @@ export function AuthProvider({ children }) {
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = (): AuthContextType => useContext(AuthContext);

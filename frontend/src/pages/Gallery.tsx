@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search } from 'lucide-react';
 import BookCard from '../components/BookCard';
 import Modal from '../components/ui/Modal';
 import api from '../services/api';
+import { Book } from '../types';
 
 export default function Gallery() {
-  const [books, setBooks] = useState([]);
+  const [books, setBooks] = useState<Book[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,7 +29,7 @@ export default function Gallery() {
     }
   };
 
-  const handleAddBook = async (e) => {
+  const handleAddBook = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       const response = await api.post('/books', {
