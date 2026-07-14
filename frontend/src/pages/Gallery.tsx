@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Library } from 'lucide-react';
 import BookCard from '../components/BookCard';
 import Modal from '../components/ui/Modal';
 import api from '../services/api';
@@ -10,12 +10,9 @@ export default function Gallery() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  
   const [newBook, setNewBook] = useState({ title: '', author: '', coverUrl: '' });
 
-  useEffect(() => {
-    fetchBooks();
-  }, []);
+  useEffect(() => { fetchBooks(); }, []);
 
   const fetchBooks = async () => {
     try {
@@ -23,7 +20,7 @@ export default function Gallery() {
       const response = await api.get('/books');
       setBooks(response.data);
     } catch (error) {
-      console.error("Error fetching books:", error);
+      console.error('Error fetching books:', error);
     } finally {
       setIsLoading(false);
     }
@@ -32,125 +29,107 @@ export default function Gallery() {
   const handleAddBook = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const response = await api.post('/books', {
-        title: newBook.title,
-        author: newBook.author,
-        coverUrl: newBook.coverUrl
-      });
+      const response = await api.post('/books', newBook);
       setBooks([response.data, ...books]);
       setNewBook({ title: '', author: '', coverUrl: '' });
       setIsAddModalOpen(false);
     } catch (error) {
-      console.error("Error adding book:", error);
-      alert("Failed to add book. Make sure the backend is running.");
+      console.error('Error adding book:', error);
+      alert('Failed to add book. Make sure the backend is running.');
     }
   };
 
-  const filteredBooks = books.filter(book => 
-    book.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    book.author.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredBooks = books.filter(b =>
+    b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    b.author.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const inputClass = 'w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all bg-white';
+  const labelClass = 'block text-xs font-semibold text-slate-600 mb-1.5';
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
+    <div className="w-full px-5 sm:px-8 py-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-200">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Library</h1>
-          <p className="text-gray-500 mt-1">A collection of thoughts and learnings.</p>
+          <h1 className="text-2xl font-bold font-serif text-slate-900 tracking-tight">My Library</h1>
+          <p className="text-sm text-slate-400 mt-0.5">
+            {!isLoading && `${books.length} ${books.length === 1 ? 'book' : 'books'} in your collection`}
+          </p>
         </div>
-        
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input 
-              type="text" 
-              placeholder="Search books..." 
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5" />
+            <input
+              type="text"
+              placeholder="Search books…"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all w-full sm:w-64"
+              onChange={e => setSearchQuery(e.target.value)}
+              className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all bg-white w-56"
             />
           </div>
-          <button 
+          <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+            className="flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Add Book</span>
+            Add Book
           </button>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="text-center py-20 text-gray-500">Loading library...</div>
-      ) : filteredBooks.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredBooks.map(book => (
-            <BookCard key={book.id} book={book} />
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="bg-white border border-slate-200 rounded-2xl overflow-hidden animate-pulse">
+              <div className="bg-slate-100" style={{ height: '220px' }} />
+              <div className="p-5 space-y-2.5">
+                <div className="h-3.5 bg-slate-100 rounded w-3/4" />
+                <div className="h-3 bg-slate-100 rounded w-1/2" />
+              </div>
+            </div>
           ))}
         </div>
+      ) : filteredBooks.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+          {filteredBooks.map(book => <BookCard key={book.id} book={book} />)}
+        </div>
       ) : (
-        <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-          <p className="text-gray-500 mb-4">No books found.</p>
+        <div className="text-center py-28 border border-dashed border-slate-200 rounded-2xl bg-white">
+          <Library className="w-9 h-9 text-slate-200 mx-auto mb-4" />
+          <p className="text-sm font-semibold text-slate-400">
+            {searchQuery ? 'No books matched your search.' : 'Your library is empty.'}
+          </p>
+          {!searchQuery && (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="mt-3 text-xs font-bold text-brand-600 hover:text-brand-700 transition-colors"
+            >
+              Add your first book →
+            </button>
+          )}
         </div>
       )}
 
-      <Modal 
-        isOpen={isAddModalOpen} 
-        onClose={() => setIsAddModalOpen(false)} 
-        title="Add New Book"
-      >
+      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Add New Book">
         <form onSubmit={handleAddBook} className="flex flex-col gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-            <input 
-              required
-              type="text" 
-              value={newBook.title}
-              onChange={e => setNewBook({...newBook, title: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-              placeholder="e.g. Meditations"
-            />
+            <label className={labelClass}>Title</label>
+            <input required type="text" value={newBook.title} onChange={e => setNewBook({ ...newBook, title: e.target.value })} className={inputClass} placeholder="e.g. Meditations" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Author</label>
-            <input 
-              required
-              type="text" 
-              value={newBook.author}
-              onChange={e => setNewBook({...newBook, author: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-              placeholder="e.g. Marcus Aurelius"
-            />
+            <label className={labelClass}>Author</label>
+            <input required type="text" value={newBook.author} onChange={e => setNewBook({ ...newBook, author: e.target.value })} className={inputClass} placeholder="e.g. Marcus Aurelius" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cover Image URL (Optional)</label>
-            <input 
-              type="url" 
-              value={newBook.coverUrl}
-              onChange={e => setNewBook({...newBook, coverUrl: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-              placeholder="https://..."
-            />
+            <label className={labelClass}>Cover URL <span className="text-slate-300 font-normal">(Optional)</span></label>
+            <input type="url" value={newBook.coverUrl} onChange={e => setNewBook({ ...newBook, coverUrl: e.target.value })} className={inputClass} placeholder="https://..." />
           </div>
-          
-          <div className="mt-4 flex justify-end gap-3">
-            <button 
-              type="button" 
-              onClick={() => setIsAddModalOpen(false)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
-            >
-              Add Book
-            </button>
+          <div className="flex justify-end gap-2.5 pt-1">
+            <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">Cancel</button>
+            <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors">Add Book</button>
           </div>
         </form>
       </Modal>
     </div>
   );
 }
-

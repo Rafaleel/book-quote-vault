@@ -27,6 +27,9 @@ public class Quote {
     @ElementCollection
     private List<String> tags;
 
+    @Column(name = "character_name")
+    private String characterName;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "book_id", nullable = false)
     @JsonIgnore

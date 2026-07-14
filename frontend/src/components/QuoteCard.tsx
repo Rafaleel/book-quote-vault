@@ -1,4 +1,4 @@
-import { Quote as QuoteIcon, Tag, Edit3, Trash2 } from 'lucide-react';
+import { Tag, Edit3, Trash2 } from 'lucide-react';
 import { Quote } from '../types';
 
 interface QuoteCardProps {
@@ -9,48 +9,67 @@ interface QuoteCardProps {
 
 export default function QuoteCard({ quote, onEdit, onDelete }: QuoteCardProps) {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative group">
-      <div className="absolute top-6 left-6 opacity-10">
-        <QuoteIcon size={48} className="text-indigo-600" />
+    <div className="bg-white border border-slate-200/80 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-md transition-all duration-200 relative group flex flex-col justify-between min-h-[180px]">
+      <div
+        aria-hidden
+        className="absolute top-0 left-4 text-[96px] leading-none font-serif text-slate-100 select-none pointer-events-none"
+        style={{ fontFamily: 'Georgia, serif', lineHeight: 1 }}
+      >
+        "
       </div>
 
-      <div className="relative z-10 pl-4 border-l-2 border-indigo-200 ml-4 mt-2">
-        <p className="text-gray-800 text-lg font-serif italic leading-relaxed mb-6">
-          "{quote.text}"
+      <div className="absolute top-3.5 right-3.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex gap-1 z-10">
+        <button
+          onClick={() => onEdit(quote)}
+          className="p-1.5 text-slate-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 bg-white/90 border border-slate-100 transition-colors shadow-sm"
+          title="Edit Quote"
+        >
+          <Edit3 size={12} />
+        </button>
+        <button
+          onClick={() => quote.id && onDelete(quote.id)}
+          className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 bg-white/90 border border-slate-100 transition-colors shadow-sm"
+          title="Delete Quote"
+        >
+          <Trash2 size={12} />
+        </button>
+      </div>
+
+      <div className="px-6 pt-10 pb-4 relative z-[1]">
+        <p className="text-slate-800 text-[15px] font-serif italic leading-relaxed tracking-[0.01em]">
+          {quote.text}
         </p>
-      </div>
 
-      <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-50">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Tag size={14} className="text-gray-400" />
-          {quote.tags?.map((tag, idx) => (
-            <span key={idx} className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-md font-medium">
-              {tag}
-            </span>
-          ))}
-        </div>
-        {quote.page && (
-          <span className="text-xs font-semibold text-gray-400">
-            p. {quote.page}
-          </span>
+        {quote.characterName && (
+          <p className="mt-3 text-sm font-serif text-slate-400 text-right font-medium">
+            — {quote.characterName}
+          </p>
         )}
       </div>
 
-      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 bg-white/95 backdrop-blur-sm p-1 rounded-lg border border-gray-100 shadow-sm">
-        <button 
-          onClick={() => onEdit(quote)}
-          className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-md hover:bg-indigo-50 transition-colors"
-          title="Edit Quote"
-        >
-          <Edit3 size={15} />
-        </button>
-        <button 
-          onClick={() => quote.id && onDelete(quote.id)}
-          className="p-1.5 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors"
-          title="Delete Quote"
-        >
-          <Trash2 size={15} />
-        </button>
+      <div className="px-6 pb-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap mt-auto">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {quote.tags && quote.tags.length > 0 ? (
+            <>
+              <Tag size={10} className="text-slate-300 shrink-0" />
+              {quote.tags.slice(0, 5).map((tag, idx) => (
+                <span
+                  key={idx}
+                  className="bg-brand-50 text-brand-600 text-[10px] px-2 py-0.5 rounded font-bold tracking-wider uppercase"
+                >
+                  {tag}
+                </span>
+              ))}
+            </>
+          ) : (
+            <span className="text-[10px] text-slate-300 italic">No tags</span>
+          )}
+        </div>
+        {quote.page && (
+          <span className="text-[10px] font-bold text-slate-300 shrink-0 tabular-nums">
+            p.{quote.page}
+          </span>
+        )}
       </div>
     </div>
   );

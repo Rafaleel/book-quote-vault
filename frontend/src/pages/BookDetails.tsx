@@ -1,10 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Edit3 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit3, BookOpen } from 'lucide-react';
 import QuoteCard from '../components/QuoteCard';
 import Modal from '../components/ui/Modal';
 import api from '../services/api';
 import { Book, Quote } from '../types';
+
+const COVER_PALETTES = [
+  { bg: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-700', icon: 'text-indigo-400' },
+  { bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-700', icon: 'text-amber-400' },
+  { bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-700', icon: 'text-emerald-400' },
+  { bg: 'bg-rose-50', border: 'border-rose-100', text: 'text-rose-700', icon: 'text-rose-400' },
+  { bg: 'bg-sky-50', border: 'border-sky-100', text: 'text-sky-700', icon: 'text-sky-400' },
+  { bg: 'bg-purple-50', border: 'border-purple-100', text: 'text-purple-700', icon: 'text-purple-400' },
+];
+
+const getPalette = (title: string) => {
+  let hash = 0;
+  for (let i = 0; i < title.length; i++) hash = title.charCodeAt(i) + ((hash << 5) - hash);
+  return COVER_PALETTES[Math.abs(hash) % COVER_PALETTES.length];
+};
 
 export default function BookDetails() {
   const { id } = useParams<{ id: string }>();
@@ -15,13 +30,15 @@ export default function BookDetails() {
   const [isLoading, setIsLoading] = useState(true);
   
   const [isAddQuoteOpen, setIsAddQuoteOpen] = useState(false);
-  const [newQuote, setNewQuote] = useState({ text: '', page: '', tags: '' });
+  const [newQuote, setNewQuote] = useState({ text: '', page: '', tags: '', characterName: '' });
 
   const [isEditBookOpen, setIsEditBookOpen] = useState(false);
   const [editBookData, setEditBookData] = useState({ title: '', author: '', coverUrl: '' });
 
   const [isEditQuoteOpen, setIsEditQuoteOpen] = useState(false);
-  const [editQuoteData, setEditQuoteData] = useState<{id: number | null, text: string, page: string, tags: string}>({ id: null, text: '', page: '', tags: '' });
+  const [editQuoteData, setEditQuoteData] = useState<{id: number | null, text: string, page: string, tags: string, characterName: string}>({ id: null, text: '', page: '', tags: '', characterName: '' });
+  const [isDeleteBookOpen, setIsDeleteBookOpen] = useState(false);
+  const [isTagLimitModalOpen, setIsTagLimitModalOpen] = useState(false);
 
   useEffect(() => {
     fetchBookData();
@@ -43,15 +60,15 @@ export default function BookDetails() {
     }
   };
 
-  const handleDeleteBook = async () => {
-    if(window.confirm("Are you sure you want to delete this book and all its quotes?")) {
-      try {
-        await api.delete(`/books/${id}`);
-        navigate('/');
-      } catch (error) {
-        console.error("Error deleting book:", error);
-        alert("Failed to delete book.");
-      }
+  const confirmDeleteBook = async () => {
+    try {
+      await api.delete(`/books/${id}`);
+      navigate('/');
+    } catch (error) {
+      console.error("Error deleting book:", error);
+      alert("Failed to delete book.");
+    } finally {
+      setIsDeleteBookOpen(false);
     }
   };
 
@@ -80,14 +97,21 @@ export default function BookDetails() {
   const handleAddQuote = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const tagsArray = newQuote.tags.split(',').map(t => t.trim()).filter(t => t);
+      const tagsArray = newQuote.tags.split(',')
+        .map(t => t.trim().toLowerCase())
+        .filter(t => t);
+      if (tagsArray.length > 5) {
+        setIsTagLimitModalOpen(true);
+        return;
+      }
       const response = await api.post(`/books/${id}/quotes`, {
         text: newQuote.text,
         page: newQuote.page ? parseInt(newQuote.page) : null,
-        tags: tagsArray
+        tags: tagsArray,
+        characterName: newQuote.characterName.trim() || null
       });
       setQuotes([response.data, ...quotes]);
-      setNewQuote({ text: '', page: '', tags: '' });
+      setNewQuote({ text: '', page: '', tags: '', characterName: '' });
       setIsAddQuoteOpen(false);
     } catch (error) {
       console.error("Error adding quote:", error);
@@ -112,7 +136,8 @@ export default function BookDetails() {
       id: quote.id || null,
       text: quote.text,
       page: quote.page ? String(quote.page) : '',
-      tags: quote.tags ? quote.tags.join(', ') : ''
+      tags: quote.tags ? quote.tags.join(', ') : '',
+      characterName: quote.characterName || ''
     });
     setIsEditQuoteOpen(true);
   };
@@ -120,11 +145,18 @@ export default function BookDetails() {
   const handleEditQuoteSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const tagsArray = editQuoteData.tags.split(',').map(t => t.trim()).filter(t => t);
+      const tagsArray = editQuoteData.tags.split(',')
+        .map(t => t.trim().toLowerCase())
+        .filter(t => t);
+      if (tagsArray.length > 5) {
+        setIsTagLimitModalOpen(true);
+        return;
+      }
       const response = await api.put(`/books/${id}/quotes/${editQuoteData.id}`, {
         text: editQuoteData.text,
         page: editQuoteData.page ? parseInt(editQuoteData.page) : null,
-        tags: tagsArray
+        tags: tagsArray,
+        characterName: editQuoteData.characterName.trim() || null
       });
       setQuotes(quotes.map(q => q.id === editQuoteData.id ? response.data : q));
       setIsEditQuoteOpen(false);
@@ -147,78 +179,90 @@ export default function BookDetails() {
     );
   }
 
+  const isCustomCover = !book.coverUrl;
+  const palette = getPalette(book.title);
+
+  const inputClass = 'w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all bg-white';
+  const labelClass = 'block text-xs font-semibold text-slate-600 mb-1.5';
+  const btnPrimary = 'px-4 py-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors';
+  const btnSecondary = 'px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors';
+  const btnDanger = 'px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors';
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <Link to="/" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-8 transition-colors">
-        <ArrowLeft size={16} />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <Link to="/" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 mb-8 transition-colors group">
+        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
         Back to Library
       </Link>
 
-      <div className="flex flex-col md:flex-row gap-8 items-start mb-12">
-        <div className={`w-full md:w-64 h-80 md:h-96 shrink-0 rounded-2xl overflow-hidden shadow-lg border border-gray-100 ${book.color || 'bg-gray-100'}`}>
-          {book.coverUrl ? (
-            <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover" />
-          ) : (
-             <div className="w-full h-full flex items-center justify-center p-6 text-center">
-               <h3 className="font-serif text-3xl font-bold text-gray-800 drop-shadow-sm">{book.title}</h3>
-             </div>
-          )}
-        </div>
-        
-        <div className="flex-1">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-2 leading-tight">{book.title}</h1>
-          <p className="text-xl text-gray-500 mb-6">{book.author}</p>
-          
-          <div className="flex items-center gap-4 mb-8">
-            <div className="bg-gray-50 px-4 py-2 rounded-lg border border-gray-100 text-center">
-              <span className="block text-2xl font-bold text-indigo-600">{quotes.length}</span>
-              <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Quotes</span>
-            </div>
-            
-            <div className="flex gap-2">
-              <button onClick={handleEditBookClick} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Edit Book">
-                <Edit3 size={20} />
-              </button>
-              <button onClick={handleDeleteBook} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete Book">
-                <Trash2 size={20} />
-              </button>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+        <div className="lg:col-span-4 lg:sticky lg:top-24 space-y-6">
+          <div className={`w-full aspect-[3/4] max-w-[260px] mx-auto lg:mx-0 rounded-xl overflow-hidden border ${
+            isCustomCover ? `${palette.bg} ${palette.border}` : 'border-slate-200 bg-slate-100'
+          }`}>
+            {book.coverUrl ? (
+              <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex flex-col justify-between p-7">
+                <BookOpen className={`w-5 h-5 ${palette.icon}`} />
+                <h3 className={`font-serif text-2xl font-bold leading-snug ${palette.text}`}>{book.title}</h3>
+              </div>
+            )}
           </div>
           
-          <button 
-            onClick={() => setIsAddQuoteOpen(true)}
-            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-sm hover:shadow"
-          >
-            <Plus size={18} />
-            Add New Quote
-          </button>
-        </div>
-      </div>
+          <div className="space-y-4 text-center lg:text-left">
+            <div>
+              <h1 className="text-3xl font-bold font-serif text-slate-900 leading-tight mb-2">{book.title}</h1>
+              <p className="text-lg text-slate-400 font-medium">{book.author}</p>
+            </div>
 
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Saved Quotes</h2>
-        {quotes.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {quotes.map(quote => (
-              <QuoteCard 
-                key={quote.id} 
-                quote={quote} 
-                onEdit={handleEditQuoteClick}
-                onDelete={handleDeleteQuote}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-16 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-            <p className="text-gray-500 mb-4">No quotes saved for this book yet.</p>
-            <button 
+            <div className="flex items-center justify-center lg:justify-start gap-3">
+              <div className="bg-slate-100 border border-slate-200 px-4 py-2 rounded-lg text-center">
+                <span className="block text-xl font-bold text-brand-600">{quotes.length}</span>
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Quotes</span>
+              </div>
+              <div className="flex gap-1.5">
+                <button onClick={handleEditBookClick} className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-all border border-transparent hover:border-brand-100" title="Edit Book">
+                  <Edit3 size={16} />
+                </button>
+                <button onClick={() => setIsDeleteBookOpen(true)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-100" title="Delete Book">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+
+            <button
               onClick={() => setIsAddQuoteOpen(true)}
-              className="text-indigo-600 font-medium hover:underline"
+              className="w-full sm:w-auto lg:w-full inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
             >
-              Be the first to add one
+              <Plus size={18} />
+              Add New Quote
             </button>
           </div>
-        )}
+        </div>
+
+        <div className="lg:col-span-8 space-y-6">
+          <h2 className="text-2xl font-bold font-serif text-slate-900 mb-6">Saved Quotes</h2>
+          {quotes.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+              {quotes.map(quote => {
+                const isLong = quote.text.length > 250;
+                return (
+                  <div key={quote.id} className={isLong ? 'md:col-span-2' : ''}>
+                    <QuoteCard quote={quote} onEdit={handleEditQuoteClick} onDelete={handleDeleteQuote} />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-white border border-dashed border-slate-200 rounded-xl">
+              <p className="text-slate-400 text-sm mb-3">No quotes saved for this book yet.</p>
+              <button onClick={() => setIsAddQuoteOpen(true)} className="text-sm font-semibold text-brand-600 hover:text-brand-700 transition-colors">
+                Add the first one →
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <Modal 
@@ -228,53 +272,32 @@ export default function BookDetails() {
       >
         <form onSubmit={handleAddQuote} className="flex flex-col gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Quote Text</label>
-            <textarea 
-              required
-              rows={4}
-              value={newQuote.text}
-              onChange={e => setNewQuote({...newQuote, text: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
-              placeholder="Type the quote here..."
-            />
+            <label className={labelClass}>Quote text</label>
+            <textarea required rows={4} value={newQuote.text} onChange={e => setNewQuote({...newQuote, text: e.target.value})} className={`${inputClass} resize-none`} placeholder="Type the quote here…" />
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <div className="w-1/3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Page</label>
-              <input 
-                type="number" 
-                value={newQuote.page}
-                onChange={e => setNewQuote({...newQuote, page: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                placeholder="e.g. 42"
-              />
+              <label className={labelClass}>Page</label>
+              <input type="number" value={newQuote.page} onChange={e => setNewQuote({...newQuote, page: e.target.value})} className={inputClass} placeholder="e.g. 42" />
             </div>
             <div className="w-2/3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
-              <input 
-                type="text" 
-                value={newQuote.tags}
-                onChange={e => setNewQuote({...newQuote, tags: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                placeholder="Comma separated (e.g. Habits, Focus)"
-              />
+              <label className={labelClass}>Character <span className="text-slate-300 font-normal">(Optional)</span></label>
+              <input type="text" value={newQuote.characterName} onChange={e => setNewQuote({...newQuote, characterName: e.target.value})} className={inputClass} placeholder="Who said this?" />
             </div>
           </div>
-          
-          <div className="mt-4 flex justify-end gap-3">
-            <button 
-              type="button" 
-              onClick={() => setIsAddQuoteOpen(false)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
-            >
-              Save Quote
-            </button>
+          <div>
+            <label className={labelClass}>Tags</label>
+            <input
+              type="text"
+              value={newQuote.tags}
+              onChange={e => { const val = e.target.value; if (val.split(',').length > 6) return; setNewQuote({...newQuote, tags: val}); }}
+              className={`${inputClass} ${ newQuote.tags.split(',').length > 5 ? 'border-red-400 focus:border-red-500 text-red-600' : '' }`}
+              placeholder="max 5, comma separated"
+            />
+          </div>
+          <div className="flex justify-end gap-2.5 pt-1">
+            <button type="button" onClick={() => setIsAddQuoteOpen(false)} className={btnSecondary}>Cancel</button>
+            <button type="submit" className={btnPrimary}>Save Quote</button>
           </div>
         </form>
       </Modal>
@@ -286,49 +309,20 @@ export default function BookDetails() {
       >
         <form onSubmit={handleEditBookSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-            <input 
-              required
-              type="text" 
-              value={editBookData.title}
-              onChange={e => setEditBookData({...editBookData, title: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-            />
+            <label className={labelClass}>Title</label>
+            <input required type="text" value={editBookData.title} onChange={e => setEditBookData({...editBookData, title: e.target.value})} className={inputClass} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Author</label>
-            <input 
-              required
-              type="text" 
-              value={editBookData.author}
-              onChange={e => setEditBookData({...editBookData, author: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-            />
+            <label className={labelClass}>Author</label>
+            <input required type="text" value={editBookData.author} onChange={e => setEditBookData({...editBookData, author: e.target.value})} className={inputClass} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cover Image URL</label>
-            <input 
-              type="url" 
-              value={editBookData.coverUrl}
-              onChange={e => setEditBookData({...editBookData, coverUrl: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-            />
+            <label className={labelClass}>Cover Image URL <span className="text-slate-300 font-normal">(Optional)</span></label>
+            <input type="url" value={editBookData.coverUrl} onChange={e => setEditBookData({...editBookData, coverUrl: e.target.value})} className={inputClass} placeholder="https://..." />
           </div>
-          
-          <div className="mt-4 flex justify-end gap-3">
-            <button 
-              type="button" 
-              onClick={() => setIsEditBookOpen(false)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
-            >
-              Save Changes
-            </button>
+          <div className="flex justify-end gap-2.5 pt-1">
+            <button type="button" onClick={() => setIsEditBookOpen(false)} className={btnSecondary}>Cancel</button>
+            <button type="submit" className={btnPrimary}>Save Changes</button>
           </div>
         </form>
       </Modal>
@@ -340,53 +334,65 @@ export default function BookDetails() {
       >
         <form onSubmit={handleEditQuoteSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Quote Text</label>
-            <textarea 
-              required
-              rows={4}
-              value={editQuoteData.text}
-              onChange={e => setEditQuoteData({...editQuoteData, text: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
-            />
+            <label className={labelClass}>Quote text</label>
+            <textarea required rows={4} value={editQuoteData.text} onChange={e => setEditQuoteData({...editQuoteData, text: e.target.value})} className={`${inputClass} resize-none`} />
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <div className="w-1/3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Page</label>
-              <input 
-                type="number" 
-                value={editQuoteData.page}
-                onChange={e => setEditQuoteData({...editQuoteData, page: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-              />
+              <label className={labelClass}>Page</label>
+              <input type="number" value={editQuoteData.page} onChange={e => setEditQuoteData({...editQuoteData, page: e.target.value})} className={inputClass} />
             </div>
             <div className="w-2/3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
-              <input 
-                type="text" 
-                value={editQuoteData.tags}
-                onChange={e => setEditQuoteData({...editQuoteData, tags: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                placeholder="Comma separated (e.g. Habits, Focus)"
-              />
+              <label className={labelClass}>Character <span className="text-slate-300 font-normal">(Optional)</span></label>
+              <input type="text" value={editQuoteData.characterName} onChange={e => setEditQuoteData({...editQuoteData, characterName: e.target.value})} className={inputClass} placeholder="Who said this?" />
             </div>
           </div>
-          
-          <div className="mt-4 flex justify-end gap-3">
-            <button 
-              type="button" 
-              onClick={() => setIsEditQuoteOpen(false)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
-            >
-              Save Changes
-            </button>
+          <div>
+            <label className={labelClass}>Tags</label>
+            <input
+              type="text"
+              value={editQuoteData.tags}
+              onChange={e => { const val = e.target.value; if (val.split(',').length > 6) return; setEditQuoteData({...editQuoteData, tags: val}); }}
+              className={`${inputClass} ${ editQuoteData.tags.split(',').length > 5 ? 'border-red-400 focus:border-red-500 text-red-600' : '' }`}
+              placeholder="max 5, comma separated"
+            />
+          </div>
+          <div className="flex justify-end gap-2.5 pt-1">
+            <button type="button" onClick={() => setIsEditQuoteOpen(false)} className={btnSecondary}>Cancel</button>
+            <button type="submit" className={btnPrimary}>Save Changes</button>
           </div>
         </form>
+      </Modal>
+
+      <Modal 
+        isOpen={isDeleteBookOpen} 
+        onClose={() => setIsDeleteBookOpen(false)} 
+        title="Delete Book"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500 leading-relaxed">
+            Are you sure you want to delete <strong className="text-slate-800">{book.title}</strong> and all its quotes? This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2.5 pt-1">
+            <button type="button" onClick={() => setIsDeleteBookOpen(false)} className={btnSecondary}>Cancel</button>
+            <button type="button" onClick={confirmDeleteBook} className={btnDanger}>Delete book</button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal 
+        isOpen={isTagLimitModalOpen} 
+        onClose={() => setIsTagLimitModalOpen(false)} 
+        title="Tag Limit Exceeded"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500 leading-relaxed">
+            A maximum of <strong className="text-slate-800">5 tags</strong> is allowed per quote. Please remove the extra tags and try again.
+          </p>
+          <div className="flex justify-end pt-1">
+            <button type="button" onClick={() => setIsTagLimitModalOpen(false)} className={btnPrimary}>Got it</button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

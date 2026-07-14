@@ -83,6 +83,7 @@ public class QuoteController {
                         quote.setText(quoteDetails.getText());
                         quote.setPage(quoteDetails.getPage());
                         quote.setTags(quoteDetails.getTags());
+                        quote.setCharacterName(quoteDetails.getCharacterName());
                         return ResponseEntity.ok(quoteRepository.save(quote));
                     })
                     .orElse(ResponseEntity.notFound().build());

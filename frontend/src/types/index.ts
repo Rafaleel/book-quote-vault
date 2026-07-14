@@ -15,6 +15,7 @@ export const QuoteSchema = z.object({
   createdAt: z.string().optional(),
   bookId: z.number().optional(),
   tags: z.array(z.string()).optional(),
+  characterName: z.string().nullable().optional(),
 });
 export type Quote = z.infer<typeof QuoteSchema>;
 
