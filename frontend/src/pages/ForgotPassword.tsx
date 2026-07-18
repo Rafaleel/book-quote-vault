@@ -9,7 +9,7 @@ export default function ForgotPassword() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     setLoading(true); setMessage(''); setError('');
     try {
@@ -23,7 +23,7 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="min-h-screen flex flex-col lg:flex-row transition-colors duration-200">
       <div className="hidden lg:flex lg:w-[60%] relative flex-col items-center justify-center p-14 overflow-hidden bg-gradient-to-br from-indigo-950 via-brand-700 to-violet-800">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.06)_0%,transparent_55%)] pointer-events-none" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(99,102,241,0.2)_0%,transparent_55%)] pointer-events-none" />
@@ -55,21 +55,21 @@ export default function ForgotPassword() {
         </p>
       </div>
 
-      <div className="flex-1 lg:w-[40%] flex items-center justify-center bg-[#f9f8f6] px-8 py-14">
+      <div className="flex-1 lg:w-[40%] flex items-center justify-center bg-[#f9f8f6] dark:bg-slate-950 px-8 py-14 transition-colors duration-200">
         <div className="w-full max-w-[360px]">
           <div className="mb-8">
-            <h1 className="text-2xl font-bold font-serif text-slate-900 tracking-tight">Recover your account</h1>
-            <p className="text-sm text-slate-400 mt-1.5">Enter your email to receive a recovery link.</p>
+            <h1 className="text-2xl font-bold font-serif text-slate-900 dark:text-white tracking-tight">Recover your account</h1>
+            <p className="text-sm text-slate-400 dark:text-slate-500 mt-1.5 font-medium">Enter your email to receive a recovery link.</p>
           </div>
 
           {error && (
-            <div className="mb-5 p-3.5 rounded-lg bg-red-50 border border-red-200 flex gap-2.5 text-red-700 text-xs font-medium items-start">
+            <div className="mb-5 p-3.5 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 flex gap-2.5 text-red-700 dark:text-red-400 text-xs font-medium items-start">
               <AlertCircle size={14} className="shrink-0 mt-0.5 text-red-400" />
               <span>{error}</span>
             </div>
           )}
           {message && (
-            <div className="mb-5 p-3.5 rounded-lg bg-green-50 border border-green-200 flex gap-2.5 text-green-700 text-xs font-medium items-start">
+            <div className="mb-5 p-3.5 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 flex gap-2.5 text-green-700 dark:text-green-400 text-xs font-medium items-start">
               <CheckCircle2 size={14} className="shrink-0 mt-0.5 text-green-500" />
               <span>{message}</span>
             </div>
@@ -77,11 +77,11 @@ export default function ForgotPassword() {
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email" className="block text-xs font-semibold text-slate-500 mb-1.5">Email address</label>
+              <label htmlFor="email" className="block text-xs font-semibold text-slate-505 dark:text-slate-400 mb-1.5">Email address</label>
               <input
                 id="email" name="email" type="email" autoComplete="email" required
                 value={email} onChange={e => setEmail(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3.5 py-2.5 text-slate-900 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                 placeholder="name@example.com"
               />
             </div>
@@ -91,7 +91,7 @@ export default function ForgotPassword() {
           </form>
 
           <p className="mt-6 text-center">
-            <Link to="/login" className="text-xs font-semibold text-brand-600 hover:text-brand-700 transition-colors">
+            <Link to="/login" className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors">
               ← Back to Sign In
             </Link>
           </p>

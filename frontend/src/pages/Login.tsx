@@ -4,8 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { AlertCircle, BookOpen } from 'lucide-react';
 
 const inputClass =
-  'w-full bg-white border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all';
-const labelClass = 'block text-xs font-semibold text-slate-500 mb-1.5';
+  'w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3.5 py-2.5 text-slate-900 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all';
+const labelClass = 'block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5';
 
 export default function Login() {
   const { login } = useAuth();
@@ -16,7 +16,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
@@ -31,7 +31,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="min-h-screen flex flex-col lg:flex-row transition-colors duration-200">
       <div className="hidden lg:flex lg:w-[60%] relative flex-col items-center justify-center p-14 overflow-hidden bg-gradient-to-br from-indigo-950 via-brand-700 to-violet-800">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.06)_0%,transparent_55%)] pointer-events-none" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(99,102,241,0.2)_0%,transparent_55%)] pointer-events-none" />
@@ -63,15 +63,15 @@ export default function Login() {
         </p>
       </div>
 
-      <div className="flex-1 lg:w-[40%] flex items-center justify-center bg-[#f9f8f6] px-8 py-14">
+      <div className="flex-1 lg:w-[40%] flex items-center justify-center bg-[#f9f8f6] dark:bg-slate-950 px-8 py-14 transition-colors duration-200">
         <div className="w-full max-w-[360px]">
           <div className="mb-8">
-            <h1 className="text-2xl font-bold font-serif text-slate-900 tracking-tight">Welcome back</h1>
-            <p className="text-sm text-slate-400 mt-1.5">Sign in to your account to continue.</p>
+            <h1 className="text-2xl font-bold font-serif text-slate-900 dark:text-white tracking-tight">Welcome back</h1>
+            <p className="text-sm text-slate-400 dark:text-slate-500 mt-1.5">Sign in to your account to continue.</p>
           </div>
 
           {error && (
-            <div className="mb-5 p-3.5 rounded-lg bg-red-50 border border-red-200 flex gap-2.5 text-red-700 text-xs font-medium items-start">
+            <div className="mb-5 p-3.5 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 flex gap-2.5 text-red-700 dark:text-red-400 text-xs font-medium items-start">
               <AlertCircle size={14} className="shrink-0 mt-0.5 text-red-400" />
               <span>{error}</span>
             </div>
@@ -85,7 +85,7 @@ export default function Login() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label htmlFor="password" className={labelClass} style={{ marginBottom: 0 }}>Password</label>
-                <Link to="/forgot-password" className="text-[11px] font-semibold text-brand-600 hover:text-brand-700 transition-colors">Forgot?</Link>
+                <Link to="/forgot-password" className="text-[11px] font-semibold text-brand-600 dark:text-brand-450 hover:text-brand-700 dark:hover:text-brand-350 transition-colors">Forgot?</Link>
               </div>
               <input id="password" name="password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} className={inputClass} placeholder="••••••••" />
             </div>
@@ -95,14 +95,14 @@ export default function Login() {
           </form>
 
           <div className="my-5 flex items-center gap-3">
-            <div className="flex-1 border-t border-slate-200" />
-            <span className="text-[11px] text-slate-400 font-medium">or</span>
-            <div className="flex-1 border-t border-slate-200" />
+            <div className="flex-1 border-t border-slate-200 dark:border-slate-800" />
+            <span className="text-[11px] text-slate-400 dark:text-slate-550 font-medium">or</span>
+            <div className="flex-1 border-t border-slate-200 dark:border-slate-800" />
           </div>
 
           <a
             href="http://localhost:8080/oauth2/authorization/google"
-            className="w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-slate-200 rounded-lg bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+            className="w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-850 transition-colors"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -113,9 +113,9 @@ export default function Login() {
             Continue with Google
           </a>
 
-          <p className="mt-6 text-center text-xs text-slate-400">
+          <p className="mt-6 text-center text-xs text-slate-400 dark:text-slate-550">
             Don't have an account?{' '}
-            <Link to="/register" className="font-bold text-brand-600 hover:text-brand-700 transition-colors">Sign up</Link>
+            <Link to="/register" className="font-bold text-brand-600 dark:text-brand-450 hover:text-brand-700 dark:hover:text-brand-350 transition-colors">Sign up</Link>
           </p>
         </div>
       </div>
